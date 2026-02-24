@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oddvibe Lab — Component Experiment Space</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <style>
+        /* ─── RESET & BASE ─── */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0a0a0b;
+            --surface: #111114;
+            --surface2: #18181c;
+            --border: rgba(255, 255, 255, 0.07);
+            --accent: #d4ff00;
+            --accent2: #ff5c3a;
+            --accent3: #5c9dff;
+            --text: #f0f0f0;
+            --text-muted: #666;
+            --font: 'Space Grotesk', system-ui, sans-serif;
+            --mono: 'Space Mono', monospace;
+            --radius: 12px;
+            --panel-w: 320px;
+        }
+
+        html {
+            font-size: 14px;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            height: 100vh;
+            overflow: hidden;
+            display: grid;
+            grid-template-rows: 60px 1fr;
+            grid-template-columns: 1fr var(--panel-w);
+        }
+
+        /* ─── DOT GRID BG ─── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image: radial-gradient(circle, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+            background-size: 28px 28px;
+        }
+
+        /* ─── HEADER ─── */
+        header {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(10, 10, 11, 0.9);
+            backdrop-filter: blur(12px);
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .tab-list {
+            display: flex;
+            gap: 2px;
+            margin-left: 8px;
+        }
+
+        .tab {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: var(--text-muted);
+            border: 1px solid transparent;
+        }
+
+        .tab:hover {
+            color: var(--text);
+            border-color: var(--border);
+        }
+
+        .tab.active {
+            background: var(--accent);
+            color: #000;
+            font-weight: 700;
+        }
+
+        .header-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-random {
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 7px 18px;
+            border-radius: 6px;
+            font-family: var(--font);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-transform: uppercase;
+        }
+
+        .btn-random:hover {
+            background: var(--accent);
+            color: #000;
+        }
+
+        .btn-random:active {
+            transform: scale(0.97);
+        }
+
+        .btn-add {
+            background: var(--surface2);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 7px 14px;
+            border-radius: 6px;
+            font-family: var(--font);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-add:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* ─── CANVAS ─── */
+        #canvas {
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            background: transparent;
+            cursor: crosshair;
+        }
+
+        .canvas-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+            opacity: 0.15;
+            transition: opacity 0.4s;
+        }
+
+        .canvas-label.hidden {
+            opacity: 0;
+        }
+
+        .canvas-label h2 {
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1;
+        }
+
+        .canvas-label p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        /* ─── COMPONENT ITEMS ─── */
+        .comp-item {
+            position: absolute;
+            cursor: grab;
+            user-select: none;
+            transition: box-shadow 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .comp-item.selected {
+            outline: 2px solid var(--accent);
+            outline-offset: 4px;
+        }
+
+        .comp-item:active {
+            cursor: grabbing;
+        }
+
+        .comp-item .label-inner {
+            pointer-events: none;
+        }
+
+        /* Minimal */
+        .style-minimal {
+            background: #fff;
+            color: #000;
+            font-weight: 600;
+            font-family: var(--font);
+        }
+
+        /* Brutalist */
+        .style-brutalist {
+            background: #fff;
+            color: #000;
+            border: 3px solid #000;
+            font-weight: 900;
+            font-family: var(--font);
+            text-transform: uppercase;
+        }
+
+        /* Glass */
+        .style-glass {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(16px);
+        }
+
+        /* Neumorphic */
+        .style-neumorphic {
+            background: #e8e8e8;
+            color: #555;
+            font-weight: 700;
+        }
+
+        /* Retro (pixelated aesthetic) */
+        .style-retro {
+            background: #0a0a0b;
+            color: var(--accent);
+            font-family: var(--mono);
+            font-weight: 700;
+            border: 2px solid var(--accent);
+            text-transform: uppercase;
+            image-rendering: pixelated;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .style-retro::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+            opacity: 0.35;
+        }
+
+        /* ─── CONTROL PANEL ─── */
+        #panel {
+            border-left: 1px solid var(--border);
+            background: var(--surface);
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 20px 18px;
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        #panel::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        #panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #panel::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        .section-title {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        /* ─── SLIDERS ─── */
+        .control-row {
+            margin-bottom: 14px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .control-label span:first-child {
+            font-size: 12px;
+            color: var(--text);
+        }
+
+        .control-val {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--accent);
+            background: rgba(212, 255, 0, 0.07);
+            padding: 2px 7px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            /* 호환성을 위해 표준 appearance 속성도 정의 */
+            width: 100%;
+            height: 3px;
+            background: var(--surface2);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: 2px solid #000;
+            box-shadow: 0 0 0 2px var(--accent);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* ─── COLOR PALETTE ─── */
+        .palette {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 6px;
+        }
+
+        .swatch {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.15s;
+            position: relative;
+        }
+
+        .swatch.selected {
+            border-color: #fff;
+            transform: scale(1.15);
+        }
+
+        .swatch:hover {
+            transform: scale(1.1);
+        }
+
+        .swatch-custom {
+            background: linear-gradient(135deg, #f00, #0f0, #00f);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #fff;
+        }
+
+        #customColorPicker {
+            position: absolute;
+            opacity: 0;
+            inset: 0;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        /* ─── TEXT EDIT ─── */
+        .text-input {
+            width: 100%;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 9px 12px;
+            font-family: var(--font);
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .text-input:focus {
+            border-color: var(--accent);
+        }
+
+        /* ─── FONT SELECT ─── */
+        .font-select {
+            width: 100%;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 9px 12px;
+            font-family: var(--font);
+            font-size: 12px;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            /* 드롭다운 화살표 SVG */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            transition: border-color 0.2s;
+        }
+
+        .font-select:focus {
+            border-color: var(--accent);
+        }
+
+        /* ─── SHADOW DEPTH ─── */
+        .depth-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .depth-btn {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: 6px;
+            padding: 7px 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: var(--font);
+        }
+
+        .depth-btn:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            color: var(--text);
+        }
+
+        .depth-btn.active {
+            background: rgba(212, 255, 0, 0.1);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* ─── MOTION PRESET ─── */
+        .motion-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .motion-btn {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: 6px;
+            padding: 7px 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: var(--font);
+        }
+
+        .motion-btn:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            color: var(--text);
+        }
+
+        .motion-btn.active {
+            background: rgba(92, 157, 255, 0.12);
+            border-color: var(--accent3);
+            color: var(--accent3);
+        }
+
+        /* ─── CSS CODE PANEL ─── */
+        .code-box {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: var(--mono);
+            font-size: 10px;
+            line-height: 1.7;
+            color: #aaa;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .code-box::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .code-box::-webkit-scrollbar-thumb {
+            background: var(--border);
+        }
+
+        .code-keyword {
+            color: #c792ea;
+        }
+
+        .code-prop {
+            color: var(--accent3);
+        }
+
+        .code-val {
+            color: #c3e88d;
+        }
+
+        /* ─── HUG TOGGLE ─── */
+        .hug-toggle {
+            display: flex;
+            gap: 4px;
+        }
+
+        .hug-btn {
+            flex: 1;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: 6px;
+            padding: 7px 4px;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: var(--font);
+        }
+
+        .hug-btn:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            color: var(--text);
+        }
+
+        .hug-btn.active {
+            background: rgba(212, 255, 0, 0.1);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* ─── SLOT ANIMATION ─── */
+        @keyframes slotSpin {
+            0% {
+                transform: translateY(0) scale(1);
+                filter: blur(0);
+            }
+
+            25% {
+                transform: translateY(-6px) scale(0.97);
+                filter: blur(3px);
+            }
+
+            75% {
+                transform: translateY(6px) scale(0.97);
+                filter: blur(3px);
+            }
+
+            100% {
+                transform: translateY(0) scale(1);
+                filter: blur(0);
+            }
+        }
+
+        .slot-spinning {
+            animation: slotSpin 0.35s cubic-bezier(.34, 1.56, .64, 1);
+        }
+
+        /* ─── ENTER ANIMATION ─── */
+        @keyframes enterComp {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+                filter: blur(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+                filter: blur(0);
+            }
+        }
+
+        /* ─── DIVIDER ─── */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 4px 0;
+        }
+
+        /* ─── NO SELECTION ─── */
+        .no-sel {
+            color: var(--text-muted);
+            font-size: 11px;
+            text-align: center;
+            padding: 16px 0;
+            letter-spacing: 0.05em;
+        }
+
+        /* ─── STYLE-SPECIFIC CONTROLS ─── */
+        .style-detail-row {
+            display: none;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .style-detail-row.visible {
+            display: flex;
+        }
+
+        /* ─── PLAYGROUND OVERLAY ─── */
+        #playground {
+            display: none;
+            position: fixed;
+            inset: 64px 0 0 0;
+            z-index: 50;
+            background: #000;
+            overflow: hidden;
+        }
+
+        #playground.open {
+            display: block;
+        }
+
+        .pg-bg {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pg-bg-dark {
+            background: #050505;
+        }
+
+        .pg-bg-light {
+            background: #f0f0f0;
+        }
+
+        .pg-bg-grad {
+            background: linear-gradient(135deg, #1a0533, #0f2d5c, #1a3300);
+        }
+
+        .pg-bg-photo {
+            /* 유저 제공 이미지: aesthetic patterned glass texture (blue-pink vertical stripe) */
+            background:
+                repeating-linear-gradient(90deg,
+                    rgba(255, 255, 255, 0.22) 0px,
+                    rgba(255, 255, 255, 0.04) 1.5px,
+                    rgba(255, 255, 255, 0) 4px,
+                    rgba(255, 255, 255, 0.10) 7px,
+                    rgba(255, 255, 255, 0.22) 10px),
+                linear-gradient(145deg, #3a8fd8 0%, #a0b8f0 30%, #d4a8d0 60%, #f5f0f8 90%, #ffffff 100%);
+        }
+
+        #pg-preview {
+            position: absolute;
+            inset: 0;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #pg-context {
+            padding: 36px 44px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 16px;
+            width: 380px;
+            max-width: 90vw;
+            backdrop-filter: blur(4px);
+        }
+
+        .pg-ctx-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: inherit;
+            /* JS 에서의 cascade(Light/Dark) 를 받음 */
+            text-align: center;
+        }
+
+        .pg-ctx-sub {
+            font-size: 13px;
+            color: inherit;
+            /* cascade */
+            opacity: 0.65;
+            /* 진하기 조절만, 색은 부모에서 받음 */
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        #pg-comp-slot {
+            /* 선택된 컴포넌트가 여기에 삽입됨 */
+            min-height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pg-toolbar {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+            background: rgba(10, 10, 11, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 10px 16px;
+        }
+
+        .pg-btn {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: 6px;
+            padding: 6px 14px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: var(--font);
+        }
+
+        .pg-btn:hover {
+            color: var(--text);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .pg-btn.active {
+            background: rgba(212, 255, 0, 0.1);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .pg-close {
+            position: absolute;
+            top: 16px;
+            right: 24px;
+            z-index: 20;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: var(--font);
+            transition: all 0.15s;
+        }
+
+        .pg-close:hover {
+            color: var(--text);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <a class="logo" id="logoText" href="index.html" style="text-decoration:none;color:inherit">Oddvibe Lab</a>
+        <div class="tab-list" id="tabList"></div>
+        <div class="header-right">
+            <button class="btn-add" onclick="openPlayground()"
+                style="border-color:var(--accent3);color:var(--accent3)">⊞ Playground</button>
+            <button class="btn-add" onclick="addComponent()">+ Add</button>
+            <button class="btn-random" id="randomBtn" onclick="randomize()">⟳ Random</button>
+        </div>
+    </header>
+
+    <!-- PLAYGROUND: 컴포넌트 컨텍스트 미리보기 -->
+    <div id="playground">
+        <div class="pg-bg pg-bg-dark" id="pgBg"></div>
+
+        <!-- 단순한 1컨텍스트 카드: 컴포넌트가 명확하게 봐이는 구조 -->
+        <div id="pg-preview">
+            <div id="pg-context">
+                <!-- 컨텍스트 헤더 (탭 전환 시 JS가 바뀸) -->
+                <div class="pg-ctx-title" id="pgCtxTitle"></div>
+                <div class="pg-ctx-sub" id="pgCtxSub"></div>
+
+                <!-- 컴포넌트 삽입 영역 (CTA 첨해) -->
+                <div id="pg-comp-slot"></div>
+
+                <!-- 탭별 보조 UI (에디음입력 등) -->
+                <div id="pg-aux"></div>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="pg-toolbar">
+            <span style="font-size:11px;color:var(--text-muted);margin-right:4px;align-self:center">BG:</span>
+            <button class="pg-btn active" onclick="setPgBg('dark',this)">Dark</button>
+            <button class="pg-btn" onclick="setPgBg('light',this)">Light</button>
+            <button class="pg-btn" onclick="setPgBg('grad',this)">Gradient</button>
+            <button class="pg-btn" onclick="setPgBg('photo',this)">Glass</button>
+            <span style="width:1px;background:var(--border);margin:0 8px"></span>
+            <span style="font-size:11px;color:var(--text-muted);margin-right:4px;align-self:center">Context:</span>
+            <button class="pg-btn active" onclick="setPgCtx('signup',this)">Sign Up</button>
+            <button class="pg-btn" onclick="setPgCtx('hero',this)">Hero</button>
+            <button class="pg-btn" onclick="setPgCtx('card',this)">Card</button>
+        </div>
+        <button class="pg-close" onclick="closePlayground()">✕ Close</button>
+    </div>
+
+
+
+    <!-- CANVAS -->
+    <div id="canvas">
+        <div class="canvas-label" id="canvasLabel">
+            <h2>EXPERIMENT</h2>
+            <p>Click "+ Add" to place a component</p>
+        </div>
+    </div>
+
+    <!-- CONTROL PANEL -->
+    <div id="panel">
+        <div id="noSel" class="no-sel">← Select a component<br>to edit its properties</div>
+
+        <div id="controls" style="display:none; flex-direction:column; gap:20px;">
+
+            <!-- FORM -->
+            <div>
+                <div class="section-title">Form</div>
+                <div class="control-row">
+                    <div class="control-label"><span>Stroke (Border)</span><span class="control-val"
+                            id="vStroke">0px</span></div>
+                    <input type="range" id="sStroke" min="0" max="12" value="0" oninput="updateProp('stroke')">
+                </div>
+                <div class="control-row">
+                    <div class="control-label"><span>Hug (Radius)</span><span class="control-val"
+                            id="vRadius">12px</span></div>
+                    <input type="range" id="sRadius" min="0" max="120" value="12" oninput="updateProp('radius')">
+                </div>
+                <div class="hug-toggle" style="margin-top:6px;">
+                    <button class="hug-btn" onclick="setRadius(0)">Sharp</button>
+                    <button class="hug-btn" onclick="setRadius(12)">Soft</button>
+                    <button class="hug-btn" onclick="setRadius(9999)">Pill</button>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- SIZE -->
+            <div>
+                <div class="section-title">Size</div>
+                <div class="control-row">
+                    <div class="control-label"><span>Width</span><span class="control-val" id="vWidth">200px</span>
+                    </div>
+                    <input type="range" id="sWidth" min="80" max="480" value="200" oninput="updateProp('width')">
+                </div>
+                <div class="control-row">
+                    <div class="control-label"><span>Height</span><span class="control-val" id="vHeight">64px</span>
+                    </div>
+                    <input type="range" id="sHeight" min="32" max="200" value="64" oninput="updateProp('height')">
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- SHADOW -->
+            <div>
+                <div class="section-title">Shadow Depth</div>
+                <div class="depth-grid" id="depthGrid"></div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- COLOR -->
+            <div>
+                <div class="section-title">Color</div>
+                <div class="palette" id="palette"></div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- FONT -->
+            <div>
+                <div class="section-title">Font</div>
+                <!-- 폰트 드롭다운: Futura와 Helvetica를 분리된 옵션으로 제공 -->
+                <select class="font-select" id="fontSelect" onchange="updateProp('fontFamily')">
+                    <option value="'Futura LT','Futura','Century Gothic',sans-serif">Futura</option>
+                    <option value="Helvetica,'Helvetica Neue',Arial,sans-serif">Helvetica</option>
+                    <option value="'Space Grotesk',system-ui,sans-serif">Space Grotesk</option>
+                    <option value="Pretendard,'Apple SD Gothic Neo','Noto Sans KR',sans-serif">Pretendard</option>
+                    <option value="'Space Mono',monospace">Space Mono</option>
+                    <option value="'Courier New',Courier,monospace">Courier New</option>
+                    <option value="Georgia,'Times New Roman',serif">Georgia</option>
+                    <option value="'Times New Roman',Times,serif">Times New Roman</option>
+                </select>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- TEXT -->
+            <div>
+                <div class="section-title">Label Text</div>
+                <input class="text-input" id="textInput" type="text" placeholder="Button text…"
+                    oninput="updateProp('text')">
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- CANVAS BG -->
+            <div>
+                <div class="section-title">Lab Background</div>
+                <div class="hug-toggle">
+                    <button class="hug-btn active" id="bgDarkBtn" onclick="setLabBg('dark',this)">Dark</button>
+                    <button class="hug-btn" id="bgWhiteBtn" onclick="setLabBg('white',this)">White</button>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- STYLE-SPECIFIC DETAIL CONTROLS -->
+            <div>
+                <div class="section-title" id="styleDetailTitle">Style Details</div>
+
+                <!-- Glass specific: 전체 영어로 -->
+                <div class="style-detail-row" id="detail-glass">
+                    <div class="control-row">
+                        <div class="control-label"><span>Blur Intensity</span><span class="control-val"
+                                id="vGlassBlur">16px</span></div>
+                        <input type="range" id="sGlassBlur" min="0" max="40" value="16"
+                            oninput="updateStyleDetail('glassBlur')">
+                    </div>
+                    <div class="control-row">
+                        <div class="control-label"><span>Opacity</span><span class="control-val"
+                                id="vGlassOpacity">12%</span></div>
+                        <input type="range" id="sGlassOpacity" min="0" max="60" value="12"
+                            oninput="updateStyleDetail('glassOpacity')">
+                    </div>
+                    <div class="control-row">
+                        <div class="control-label"><span>Border Alpha</span><span class="control-val"
+                                id="vGlassBorder">25%</span></div>
+                        <input type="range" id="sGlassBorder" min="0" max="80" value="25"
+                            oninput="updateStyleDetail('glassBorder')">
+                    </div>
+                    <div class="control-row">
+                        <div class="control-label"><span>Saturation</span><span class="control-val"
+                                id="vGlassSat">100%</span></div>
+                        <input type="range" id="sGlassSat" min="80" max="250" value="100"
+                            oninput="updateStyleDetail('glassSat')">
+                    </div>
+                </div>
+
+                <!-- Retro specific (pixel controls) -->
+                <div class="style-detail-row" id="detail-retro">
+                    <div class="control-row">
+                        <div class="control-label"><span>Pixel Size</span><span class="control-val"
+                                id="vPixelSize">4px</span></div>
+                        <input type="range" id="sPixelSize" min="1" max="12" value="4"
+                            oninput="updateStyleDetail('pixelSize')">
+                    </div>
+                    <div class="control-row">
+                        <div class="control-label"><span>Noise Level</span><span class="control-val"
+                                id="vNoiseLevel">30%</span></div>
+                        <input type="range" id="sNoiseLevel" min="0" max="100" value="30"
+                            oninput="updateStyleDetail('noiseLevel')">
+                    </div>
+                    <div class="control-row">
+                        <div class="control-label"><span>Glow Spread</span><span class="control-val"
+                                id="vPixelGlow">0px</span></div>
+                        <input type="range" id="sPixelGlow" min="0" max="30" value="0"
+                            oninput="updateStyleDetail('pixelGlow')">
+                    </div>
+                </div>
+
+                <!-- Brutalist specific -->
+                <div class="style-detail-row" id="detail-brutalist">
+                    <div class="control-row">
+                        <div class="control-label"><span>Hard Shadow X</span><span class="control-val"
+                                id="vBrutalX">6px</span></div>
+                        <input type="range" id="sBrutalX" min="0" max="24" value="6"
+                            oninput="updateStyleDetail('brutalX')">
+                    </div>
+                    <div class="control-row">
+                        <div class="control-label"><span>Hard Shadow Y</span><span class="control-val"
+                                id="vBrutalY">6px</span></div>
+                        <input type="range" id="sBrutalY" min="0" max="24" value="6"
+                            oninput="updateStyleDetail('brutalY')">
+                    </div>
+                    <div class="control-row">
+                        <div class="control-label"><span>Shadow Color</span><span class="control-val"
+                                id="vBrutalColor">#000</span></div>
+                        <!-- 더 다양한 Shadow 컬러 팔레트 -->
+                        <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+                            <div onclick="setBrutalShadowColor('#000000',this)" title="Black"
+                                style="width:22px;height:22px;border-radius:4px;background:#000;border:2px solid #fff;cursor:pointer">
+                            </div>
+                            <div onclick="setBrutalShadowColor('#ffffff',this)" title="White"
+                                style="width:22px;height:22px;border-radius:4px;background:#fff;border:2px solid transparent;cursor:pointer">
+                            </div>
+                            <div onclick="setBrutalShadowColor('#d4ff00',this)" title="Acid Yellow"
+                                style="width:22px;height:22px;border-radius:4px;background:#d4ff00;border:2px solid transparent;cursor:pointer">
+                            </div>
+                            <div onclick="setBrutalShadowColor('#ff5c3a',this)" title="Coral"
+                                style="width:22px;height:22px;border-radius:4px;background:#ff5c3a;border:2px solid transparent;cursor:pointer">
+                            </div>
+                            <div onclick="setBrutalShadowColor('#5c9dff',this)" title="Blue"
+                                style="width:22px;height:22px;border-radius:4px;background:#5c9dff;border:2px solid transparent;cursor:pointer">
+                            </div>
+                            <div onclick="setBrutalShadowColor('#c792ea',this)" title="Purple"
+                                style="width:22px;height:22px;border-radius:4px;background:#c792ea;border:2px solid transparent;cursor:pointer">
+                            </div>
+                            <div onclick="setBrutalShadowColor('#ff2d78',this)" title="Pink"
+                                style="width:22px;height:22px;border-radius:4px;background:#ff2d78;border:2px solid transparent;cursor:pointer">
+                            </div>
+                            <div onclick="setBrutalShadowColor('#00e5c3',this)" title="Teal"
+                                style="width:22px;height:22px;border-radius:4px;background:#00e5c3;border:2px solid transparent;cursor:pointer">
+                            </div>
+                            <div onclick="setBrutalShadowColor('#ff9500',this)" title="Orange"
+                                style="width:22px;height:22px;border-radius:4px;background:#ff9500;border:2px solid transparent;cursor:pointer">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Neumorphic specific -->
+                <div class="style-detail-row" id="detail-neumorphic">
+                    <div class="control-row">
+                        <div class="control-label"><span>Shadow Depth</span><span class="control-val"
+                                id="vNeuroDepth">8px</span></div>
+                        <input type="range" id="sNeuroDepth" min="2" max="30" value="8"
+                            oninput="updateStyleDetail('neuroDepth')">
+                    </div>
+                    <div class="control-row">
+                        <div class="control-label"><span>Shadow Blur</span><span class="control-val"
+                                id="vNeuroBlur">18px</span></div>
+                        <input type="range" id="sNeuroBlur" min="4" max="50" value="18"
+                            oninput="updateStyleDetail('neuroBlur')">
+                    </div>
+                    <div style="display:flex;gap:6px;margin-top:4px">
+                        <button class="hug-btn active" id="neuroConvexBtn"
+                            onclick="setNeuroMode('convex')">Convex</button>
+                        <button class="hug-btn" id="neuroConcaveBtn" onclick="setNeuroMode('concave')">Concave</button>
+                    </div>
+                </div>
+
+                <!-- Minimal specific -->
+                <div class="style-detail-row" id="detail-minimal">
+                    <div class="control-row">
+                        <div class="control-label"><span>Font Weight</span><span class="control-val"
+                                id="vMinFW">600</span></div>
+                        <input type="range" id="sMinFW" min="300" max="900" step="100" value="600"
+                            oninput="updateStyleDetail('minFW')">
+                    </div>
+                    <div class="control-row">
+                        <div class="control-label"><span>Letter Spacing</span><span class="control-val"
+                                id="vMinLS">0px</span></div>
+                        <input type="range" id="sMinLS" min="0" max="12" value="0" oninput="updateStyleDetail('minLS')">
+                    </div>
+                    <div class="control-row">
+                        <div class="control-label"><span>Opacity</span><span class="control-val" id="vMinOp">100%</span>
+                        </div>
+                        <input type="range" id="sMinOp" min="20" max="100" value="100"
+                            oninput="updateStyleDetail('minOp')">
+                    </div>
+                </div>
+
+                <!-- 선택 없을 때 -->
+                <div id="detail-none" style="font-size:11px;color:var(--text-muted)">Select a component to see
+                    style-specific options.</div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- DELETE -->
+            <button onclick="deleteSelected()"
+                style="width:100%;background:rgba(255,92,58,0.1);border:1px solid var(--accent2);color:var(--accent2);border-radius:8px;padding:9px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s;"
+                onmouseover="this.style.background='rgba(255,92,58,0.2)'"
+                onmouseout="this.style.background='rgba(255,92,58,0.1)'">
+                Delete Component
+            </button>
+
+            <div class="divider"></div>
+
+            <!-- CSS OUTPUT -->
+            <div>
+                <div class="section-title">Generated CSS</div>
+                <div class="code-box" id="codeBox"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ────────────────────────────────────────────────
+           데이터 & 상수
+        ──────────────────────────────────────────────── */
+        // Organic 제거, Pixel → Retro
+        const TABS = ['Minimal', 'Brutalist', 'Glass', 'Neumorphic', 'Retro'];
+        const STYLE_CLASSES = {
+            Minimal: 'style-minimal', Brutalist: 'style-brutalist', Glass: 'style-glass',
+            Neumorphic: 'style-neumorphic', Retro: 'style-retro'
+        };
+
+        // 각 탭의 기본값 (Organic 제거, Retro 유지)
+        const TAB_DEFAULTS = {
+            Minimal: { padding: 18, stroke: 0, radius: 8, width: 200, height: 56, shadow: 2, color: '#ffffff', text: 'Button' },
+            Brutalist: { padding: 20, stroke: 4, radius: 0, width: 200, height: 60, shadow: 3, color: '#ffffff', text: 'CLICK ME' },
+            Glass: { padding: 18, stroke: 1, radius: 16, width: 220, height: 60, shadow: 2, color: 'rgba(255,255,255,0.15)', text: 'Explore' },
+            Neumorphic: { padding: 20, stroke: 0, radius: 20, width: 200, height: 60, shadow: 2, color: '#e8e8e8', text: 'Neutral' },
+            Retro: { padding: 16, stroke: 2, radius: 0, width: 200, height: 56, shadow: 0, color: '#000000', text: 'EXECUTE' },
+        };
+
+        const SHADOW_PRESETS = [
+            { label: 'None', val: '' },
+            { label: 'Subtle', val: '0 2px 6px rgba(0,0,0,0.18)' },
+            { label: 'Raised', val: '0 6px 18px rgba(0,0,0,0.28)' },
+            { label: 'Float', val: '0 12px 36px rgba(0,0,0,0.36)' },
+            { label: 'Hard', val: '6px 6px 0 #000' },
+            { label: 'Glow', val: '0 0 24px rgba(212,255,0,0.6)' },
+        ];
+
+        const PALETTE_COLORS = [
+            '#ffffff', '#d4ff00', '#ff5c3a', '#5c9dff', '#c792ea', '#000000', '#1a1a2e', 'custom'
+        ];
+
+        const MOTION_PRESETS = [
+            { label: 'Snap', val: '0.1s linear' },
+            { label: 'Spring', val: '0.4s cubic-bezier(.34,1.56,.64,1)' },
+            { label: 'Rubber', val: '0.5s cubic-bezier(.18,1.8,.32,1)' },
+        ];
+
+        /* ────────────────────────────────────────────────
+           상태
+        ──────────────────────────────────────────────── */
+        let currentTab = 'Minimal';
+        let components = []; // {id, el, props}
+        let selectedId = null;
+        let compCounter = 0;
+        let dragging = null;
+        let dragOffX = 0, dragOffY = 0;
+
+        // 스타일별 세부 값 (Organic 제거, Pixel 추가)
+        let styleDetails = {
+            glassBlur: 16, glassOpacity: 12, glassBorder: 25, glassSat: 100,
+            pixelSize: 4, noiseLevel: 30, pixelGlow: 0,
+            brutalX: 6, brutalY: 6, brutalShadowColor: '#000000',
+            neuroDepth: 8, neuroBlur: 18, neuroMode: 'convex',
+            minFW: 600, minLS: 0, minOp: 100,
+        };
+
+        /* ────────────────────────────────────────────────
+           초기화
+        ──────────────────────────────────────────────── */
+        function init() {
+            buildTabs();
+            buildDepthGrid();
+            buildPalette();
+            // Motion curve 제거 — buildMotionGrid() 호출 삭제
+            logoScramble();
+        }
+
+        function buildTabs() {
+            const list = document.getElementById('tabList');
+            TABS.forEach(t => {
+                const el = document.createElement('div');
+                el.className = 'tab' + (t === currentTab ? ' active' : '');
+                el.textContent = t;
+                el.onclick = () => switchTab(t);
+                list.appendChild(el);
+            });
+        }
+
+        function buildDepthGrid() {
+            const g = document.getElementById('depthGrid');
+            SHADOW_PRESETS.forEach((s, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'depth-btn' + (i === 2 ? ' active' : '');
+                btn.textContent = s.label;
+                btn.dataset.idx = i;
+                btn.onclick = () => {
+                    document.querySelectorAll('.depth-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    if (selectedId !== null) {
+                        getComp(selectedId).props.shadow = i;
+                        renderComp(selectedId);
+                        updateCode();
+                    }
+                };
+                g.appendChild(btn);
+            });
+        }
+
+        function buildPalette() {
+            const p = document.getElementById('palette');
+            PALETTE_COLORS.forEach(c => {
+                const sw = document.createElement('div');
+                sw.className = 'swatch' + (c === '#ffffff' ? ' selected' : '');
+                if (c === 'custom') {
+                    sw.className += ' swatch-custom';
+                    sw.innerHTML = '<input type="color" id="customColorPicker" value="#ff0000">';
+                    sw.querySelector('input').oninput = (e) => {
+                        applyColor(e.target.value);
+                        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+                        sw.classList.add('selected');
+                    };
+                } else {
+                    sw.style.background = c;
+                    sw.onclick = () => {
+                        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+                        sw.classList.add('selected');
+                        applyColor(c);
+                    };
+                }
+                p.appendChild(sw);
+            });
+        }
+
+        function buildMotionGrid() {
+            const g = document.getElementById('motionGrid');
+            MOTION_PRESETS.forEach((m, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'motion-btn' + (i === 1 ? ' active' : '');
+                btn.textContent = m.label;
+                btn.dataset.idx = i;
+                btn.onclick = () => {
+                    document.querySelectorAll('.motion-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    if (selectedId !== null) {
+                        getComp(selectedId).props.motion = i;
+                        renderComp(selectedId);
+                        updateCode();
+                    }
+                };
+                g.appendChild(btn);
+            });
+        }
+
+        /* ────────────────────────────────────────────────
+           탭 전환
+        ──────────────────────────────────────────────── */
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.toggle('active', t.textContent === tab);
+            });
+            // 선택된 컴포넌트 스타일 변경
+            if (selectedId !== null) {
+                const comp = getComp(selectedId);
+                comp.props.type = tab;
+                renderComp(selectedId);
+                updateCode();
+                // ★ 탭 전환 시 Detail 패널 갱신 (핵심)
+                updateStyleDetailPanel(tab);
+            }
+        }
+
+        /* ────────────────────────────────────────────────
+           컴포넌트 추가
+        ──────────────────────────────────────────────── */
+        function addComponent() {
+            document.getElementById('canvasLabel').classList.add('hidden');
+            const canvas = document.getElementById('canvas');
+            const rect = canvas.getBoundingClientRect();
+            const id = ++compCounter;
+            const defaults = TAB_DEFAULTS[currentTab];
+            const props = {
+                type: currentTab,
+                padding: defaults.padding,
+                stroke: defaults.stroke,
+                radius: defaults.radius,
+                width: defaults.width,
+                height: defaults.height,
+                shadow: defaults.shadow,
+                color: defaults.color,
+                text: defaults.text,
+                motion: 1, // spring
+                x: 80 + Math.random() * (rect.width - 300),
+                y: 60 + Math.random() * (rect.height - 180),
+                strokeColor: '#000000',
+                textColor: '',
+                // 폰트 패밀리 (기본값: Futura)
+                fontFamily: "'Futura LT','Futura','Century Gothic',sans-serif"
+            };
+            const el = document.createElement('div');
+            el.className = 'comp-item';
+            el.dataset.id = id;
+            el.style.animation = 'enterComp 0.4s cubic-bezier(.34,1.56,.64,1) forwards';
+            canvas.appendChild(el);
+            components.push({ id, el, props });
+            applyStyleToEl(el, props);
+            positionEl(el, props);
+            bindCompEvents(el, id);
+            selectComp(id);
+        }
+
+        function applyStyleToEl(el, props) {
+            TABS.forEach(t => el.classList.remove(STYLE_CLASSES[t]));
+            el.classList.add(STYLE_CLASSES[props.type]);
+
+            el.style.width = props.width + 'px';
+            el.style.height = props.height + 'px';
+            el.style.padding = props.padding + 'px';
+            el.style.borderRadius = props.radius >= 9999 ? '9999px' : props.radius + 'px';
+            el.style.borderWidth = props.stroke + 'px';
+            el.style.borderStyle = props.stroke > 0 ? 'solid' : 'none';
+            el.style.boxShadow = applyDepthShadow(props);
+            el.style.transition = `transform ${MOTION_PRESETS[props.motion].val}, box-shadow 0.2s`;
+
+            // 색상
+            if (props.type === 'Glass') {
+                el.style.background = '';
+            } else {
+                el.style.background = props.color;
+            }
+
+            // 텍스트 색상 자동 계산
+            if (!props.textColor) {
+                const c = props.color;
+                if (c === '#000000' || c === '#1a1a2e') el.style.color = '#ffffff';
+                else if (c === 'rgba(255,255,255,0.15)') el.style.color = '#ffffff';
+                else el.style.color = '';
+            }
+
+            // Brutalist 특수 그림자
+            if (props.type === 'Brutalist' && props.shadow === 3) {
+                el.style.boxShadow = `${props.stroke}px ${props.stroke}px 0 #000`;
+            }
+            // Neumorphic 특수 그림자
+            if (props.type === 'Neumorphic') {
+                el.style.boxShadow = `8px 8px 18px rgba(163,177,198,0.5), -8px -8px 18px rgba(255,255,255,0.85)`;
+            }
+
+            el.innerHTML = `<span class="label-inner">${props.text}</span>`;
+            // 폰트 패밀리 적용
+            const inner = el.querySelector('.label-inner');
+            if (inner && props.fontFamily) inner.style.fontFamily = props.fontFamily;
+            // applyStyleToEl 후 스타일별 세부 설정을 다시 적용 (폸 세부 슬라이더 동기화)
+            applyStyleDetails(el, props.type);
+        }
+
+        function applyDepthShadow(props) {
+            return SHADOW_PRESETS[props.shadow].val;
+        }
+
+        function positionEl(el, props) {
+            el.style.left = props.x + 'px';
+            el.style.top = props.y + 'px';
+        }
+
+        /* ────────────────────────────────────────────────
+           드래그 & 자기장
+        ──────────────────────────────────────────────── */
+        function bindCompEvents(el, id) {
+            el.addEventListener('mousedown', e => {
+                e.stopPropagation();
+                selectComp(id);
+                dragging = id;
+                const rect = el.getBoundingClientRect();
+                dragOffX = e.clientX - rect.left;
+                dragOffY = e.clientY - rect.top;
+                el.style.zIndex = 999;
+            });
+
+            // 자기장 hover (마우스가 가까이 오면 끌려가는 효과)
+            const canvas = document.getElementById('canvas');
+            canvas.addEventListener('mousemove', e => {
+                if (dragging === id) return;
+                const rect = el.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2;
+                const cy = rect.top + rect.height / 2;
+                const dx = e.clientX - cx;
+                const dy = e.clientY - cy;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const threshold = 150;
+                if (dist < threshold) {
+                    const force = (threshold - dist) / threshold;
+                    const moveX = dx * force * 0.25;
+                    const moveY = dy * force * 0.25;
+                    el.style.transform = `translate(${moveX}px, ${moveY}px)`;
+                } else {
+                    el.style.transform = '';
+                }
+            });
+        }
+
+        document.addEventListener('mousemove', e => {
+            if (!dragging) return;
+            const comp = getComp(dragging);
+            const canvas = document.getElementById('canvas');
+            const canvasRect = canvas.getBoundingClientRect();
+            comp.props.x = e.clientX - canvasRect.left - dragOffX;
+            comp.props.y = e.clientY - canvasRect.top - dragOffY;
+            positionEl(comp.el, comp.props);
+            comp.el.style.transform = '';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (dragging) {
+                const comp = getComp(dragging);
+                comp.el.style.zIndex = '';
+                dragging = null;
+            }
+        });
+
+        // 캔버스 클릭 → 선택 해제
+        document.getElementById('canvas').addEventListener('mousedown', e => {
+            if (e.target === document.getElementById('canvas') || e.target.id === 'canvasLabel' || e.target.closest('.canvas-label')) {
+                deselectAll();
+            }
+        });
+
+        /* ────────────────────────────────────────────────
+           선택 & 패널
+        ──────────────────────────────────────────────── */
+        function selectComp(id) {
+            deselectAll(false);
+            selectedId = id;
+            const comp = getComp(id);
+            comp.el.classList.add('selected');
+            document.getElementById('noSel').style.display = 'none';
+            const ctrl = document.getElementById('controls');
+            ctrl.style.display = 'flex';
+
+            // 슬라이더 동기화 (Spacing 제거로 margin/padding 제외)
+            const p = comp.props;
+            setSlider('sStroke', 'vStroke', p.stroke, 'px');
+            setSlider('sRadius', 'vRadius', p.radius >= 9999 ? 120 : p.radius, 'px');
+            setSlider('sWidth', 'vWidth', p.width, 'px');
+            setSlider('sHeight', 'vHeight', p.height, 'px');
+
+            document.getElementById('textInput').value = p.text;
+
+            // 폰트 패밀리 동기화
+            const fontSel = document.getElementById('fontSelect');
+            if (fontSel && p.fontFamily) fontSel.value = p.fontFamily;
+
+            // 탭 동기화
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.toggle('active', t.textContent === p.type);
+            });
+            currentTab = p.type;
+
+            // 그림자 동기화
+            document.querySelectorAll('.depth-btn').forEach(b => {
+                b.classList.toggle('active', parseInt(b.dataset.idx) === p.shadow);
+            });
+
+            updateCode();
+            updateStyleDetailPanel(p.type);
+        }
+
+        function deselectAll(clearId = true) {
+            components.forEach(c => c.el.classList.remove('selected'));
+            if (clearId) {
+                selectedId = null;
+                document.getElementById('noSel').style.display = 'block';
+                document.getElementById('controls').style.display = 'none';
+            }
+        }
+
+        function setSlider(sliderId, valId, val, unit) {
+            // 요소가 없으면 조용히 skip (Spacing 제거 등으로 일부 ID가 없을 수 있음)
+            const sl = document.getElementById(sliderId);
+            const vl = document.getElementById(valId);
+            if (sl) sl.value = val;
+            if (vl) vl.textContent = val + unit;
+        }
+
+        /* ────────────────────────────────────────────────
+           속성 업데이트
+        ──────────────────────────────────────────────── */
+        function updateProp(prop) {
+            if (selectedId === null) return;
+            const comp = getComp(selectedId);
+            const p = comp.props;
+            switch (prop) {
+                case 'stroke':
+                    p.stroke = +document.getElementById('sStroke').value;
+                    document.getElementById('vStroke').textContent = p.stroke + 'px';
+                    comp.el.style.borderWidth = p.stroke + 'px';
+                    comp.el.style.borderStyle = p.stroke > 0 ? 'solid' : 'none';
+                    break;
+                case 'radius':
+                    p.radius = +document.getElementById('sRadius').value;
+                    document.getElementById('vRadius').textContent = p.radius + 'px';
+                    comp.el.style.borderRadius = p.radius + 'px';
+                    break;
+                case 'width':
+                    p.width = +document.getElementById('sWidth').value;
+                    document.getElementById('vWidth').textContent = p.width + 'px';
+                    comp.el.style.width = p.width + 'px';
+                    break;
+                case 'height':
+                    p.height = +document.getElementById('sHeight').value;
+                    document.getElementById('vHeight').textContent = p.height + 'px';
+                    comp.el.style.height = p.height + 'px';
+                    break;
+                case 'text':
+                    p.text = document.getElementById('textInput').value;
+                    comp.el.querySelector('.label-inner').textContent = p.text;
+                    break;
+                case 'fontFamily':
+                    // 선택된 폰트 패밀리를 prop에 저장하고 컴포넌트에 즐시 적용
+                    p.fontFamily = document.getElementById('fontSelect').value;
+                    const inner = comp.el.querySelector('.label-inner');
+                    if (inner) inner.style.fontFamily = p.fontFamily;
+                    break;
+            }
+            updateCode();
+        }
+
+        function setRadius(val) {
+            if (selectedId === null) return;
+            const comp = getComp(selectedId);
+            comp.props.radius = val;
+            const displayVal = val >= 9999 ? 120 : val;
+            document.getElementById('sRadius').value = displayVal;
+            document.getElementById('vRadius').textContent = (val >= 9999 ? '∞' : val) + 'px';
+            comp.el.style.borderRadius = val >= 9999 ? '9999px' : val + 'px';
+            updateCode();
+        }
+
+        function applyColor(c) {
+            if (selectedId === null) return;
+            const comp = getComp(selectedId);
+            comp.props.color = c;
+            comp.el.style.background = c;
+            // 텍스트 색상 자동
+            const dark = ['#000000', '#1a1a2e'];
+            if (dark.includes(c)) comp.el.style.color = '#fff';
+            else comp.el.style.color = '';
+            updateCode();
+        }
+
+        function renderComp(id) {
+            const comp = getComp(id);
+            applyStyleToEl(comp.el, comp.props);
+            positionEl(comp.el, comp.props);
+        }
+
+        /* ────────────────────────────────────────────────
+           삭제
+        ──────────────────────────────────────────────── */
+        function deleteSelected() {
+            if (selectedId === null) return;
+            const comp = getComp(selectedId);
+            comp.el.style.animation = 'enterComp 0.25s reverse forwards';
+            setTimeout(() => comp.el.remove(), 250);
+            components = components.filter(c => c.id !== selectedId);
+            selectedId = null;
+            document.getElementById('noSel').style.display = 'block';
+            document.getElementById('controls').style.display = 'none';
+            if (components.length === 0) {
+                document.getElementById('canvasLabel').classList.remove('hidden');
+            }
+        }
+
+        /* ────────────────────────────────────────────────
+           RANDOM
+        ──────────────────────────────────────────────── */
+        function randomize() {
+            if (selectedId === null) {
+                // 선택 없으면 캔버스에 랜덤 컴포넌트 추가
+                addComponent();
+                setTimeout(() => randomizeSelected(), 100);
+                return;
+            }
+            randomizeSelected();
+        }
+
+        function randomizeSelected() {
+            if (selectedId === null) return;
+            const comp = getComp(selectedId);
+            const el = comp.el;
+
+            // 슬롯 스핀 애니메이션
+            el.classList.add('slot-spinning');
+            setTimeout(() => {
+                el.classList.remove('slot-spinning');
+
+                const types = TABS;
+                comp.props.type = types[Math.floor(Math.random() * types.length)];
+                comp.props.margin = rand(0, 40);
+                comp.props.padding = rand(8, 48);
+                comp.props.stroke = rand(0, 8);
+                comp.props.radius = [0, 4, 8, 16, 24, 9999][rand(0, 5)];
+                comp.props.width = rand(120, 360);
+                comp.props.height = rand(40, 120);
+                comp.props.shadow = rand(0, 5);
+                comp.props.motion = rand(0, 2);
+                const palColors = PALETTE_COLORS.filter(c => c !== 'custom');
+                comp.props.color = palColors[rand(0, palColors.length - 1)];
+
+                renderComp(selectedId);
+                selectComp(selectedId); // 패널 동기화
+            }, 180);
+        }
+
+        function rand(min, max) {
+            return min + Math.floor(Math.random() * (max - min + 1));
+        }
+
+        /* ────────────────────────────────────────────────
+           CSS 코드 출력
+        ──────────────────────────────────────────────── */
+        function updateCode() {
+            if (selectedId === null) return;
+            const p = getComp(selectedId).props;
+            const r = p.radius >= 9999 ? '9999px' : p.radius + 'px';
+            const shadow = SHADOW_PRESETS[p.shadow].val || 'none';
+            const lines = [
+                `.button {`,
+                `  width: ${p.width}px;`,
+                `  height: ${p.height}px;`,
+                `  padding: ${p.padding}px;`,
+                `  margin: ${p.margin}px;`,
+                `  border-radius: ${r};`,
+                p.stroke > 0 ? `  border: ${p.stroke}px solid;` : `  border: none;`,
+                `  background: ${p.color};`,
+                `  box-shadow: ${shadow};`,
+                `  transition: transform ${MOTION_PRESETS[p.motion].val};`,
+                `  /* style: ${p.type} */`,
+                `}`,
+            ];
+            const box = document.getElementById('codeBox');
+            box.innerHTML = lines.map(l => {
+                return l
+                    .replace(/(\.button|{|})/g, '<span class="code-keyword">$1</span>')
+                    .replace(/(\w[\w-]*)(?=:)/g, '<span class="code-prop">$1</span>')
+                    .replace(/:(.*)/g, ': <span class="code-val">$1</span>');
+            }).join('\n');
+        }
+
+        /* ────────────────────────────────────────────────
+           스타일별 세부 컨트롤
+        ──────────────────────────────────────────────── */
+        // 선택된 스타일에 맞는 detail 패널만 보이기
+        function updateStyleDetailPanel(type) {
+            // 'retro' key → id='detail-retro' 매핑
+            const all = ['glass', 'retro', 'brutalist', 'neumorphic', 'minimal', 'none'];
+            all.forEach(k => {
+                const el = document.getElementById('detail-' + k);
+                if (el) el.classList.remove('visible');
+            });
+            const key = type ? type.toLowerCase() : 'none';
+            const target = document.getElementById('detail-' + key) || document.getElementById('detail-none');
+            if (target) target.classList.add('visible');
+            const titleEl = document.getElementById('styleDetailTitle');
+            if (titleEl) titleEl.textContent = type ? type + ' Details' : 'Style Details';
+        }
+
+        // 각 슬라이더가 바뀔 때 호출
+        function updateStyleDetail(key) {
+            if (selectedId === null) return;
+            const comp = getComp(selectedId);
+
+            if (key === 'glassBlur') {
+                styleDetails.glassBlur = +document.getElementById('sGlassBlur').value;
+                document.getElementById('vGlassBlur').textContent = styleDetails.glassBlur + 'px';
+            } else if (key === 'glassOpacity') {
+                styleDetails.glassOpacity = +document.getElementById('sGlassOpacity').value;
+                document.getElementById('vGlassOpacity').textContent = styleDetails.glassOpacity + '%';
+            } else if (key === 'glassBorder') {
+                styleDetails.glassBorder = +document.getElementById('sGlassBorder').value;
+                document.getElementById('vGlassBorder').textContent = styleDetails.glassBorder + '%';
+            } else if (key === 'glassSat') {
+                styleDetails.glassSat = +document.getElementById('sGlassSat').value;
+                document.getElementById('vGlassSat').textContent = styleDetails.glassSat + '%';
+            } else if (key === 'pixelSize') {
+                // Pixel: 픽셀 사이즈 → CSS filter로 픽셀화 효과
+                styleDetails.pixelSize = +document.getElementById('sPixelSize').value;
+                document.getElementById('vPixelSize').textContent = styleDetails.pixelSize + 'px';
+            } else if (key === 'noiseLevel') {
+                styleDetails.noiseLevel = +document.getElementById('sNoiseLevel').value;
+                document.getElementById('vNoiseLevel').textContent = styleDetails.noiseLevel + '%';
+            } else if (key === 'pixelGlow') {
+                styleDetails.pixelGlow = +document.getElementById('sPixelGlow').value;
+                document.getElementById('vPixelGlow').textContent = styleDetails.pixelGlow + 'px';
+            } else if (key === 'brutalX') {
+                styleDetails.brutalX = +document.getElementById('sBrutalX').value;
+                document.getElementById('vBrutalX').textContent = styleDetails.brutalX + 'px';
+            } else if (key === 'brutalY') {
+                styleDetails.brutalY = +document.getElementById('sBrutalY').value;
+                document.getElementById('vBrutalY').textContent = styleDetails.brutalY + 'px';
+            } else if (key === 'neuroDepth') {
+                styleDetails.neuroDepth = +document.getElementById('sNeuroDepth').value;
+                document.getElementById('vNeuroDepth').textContent = styleDetails.neuroDepth + 'px';
+            } else if (key === 'neuroBlur') {
+                styleDetails.neuroBlur = +document.getElementById('sNeuroBlur').value;
+                document.getElementById('vNeuroBlur').textContent = styleDetails.neuroBlur + 'px';
+            } else if (key === 'minFW') {
+                styleDetails.minFW = +document.getElementById('sMinFW').value;
+                document.getElementById('vMinFW').textContent = styleDetails.minFW;
+            } else if (key === 'minLS') {
+                styleDetails.minLS = +document.getElementById('sMinLS').value;
+                document.getElementById('vMinLS').textContent = styleDetails.minLS + 'px';
+            } else if (key === 'minOp') {
+                styleDetails.minOp = +document.getElementById('sMinOp').value;
+                document.getElementById('vMinOp').textContent = styleDetails.minOp + '%';
+            }
+
+            applyStyleDetails(comp.el, comp.props.type);
+            updateCode();
+        }
+
+        function setBrutalShadowColor(color, el) {
+            styleDetails.brutalShadowColor = color;
+            document.getElementById('vBrutalColor').textContent = color.slice(0, 7);
+            if (selectedId !== null) applyStyleDetails(getComp(selectedId).el, 'Brutalist');
+        }
+
+        function setNeuroMode(mode) {
+            styleDetails.neuroMode = mode;
+            document.getElementById('neuroConvexBtn').classList.toggle('active', mode === 'convex');
+            document.getElementById('neuroConcaveBtn').classList.toggle('active', mode === 'concave');
+            if (selectedId !== null) applyStyleDetails(getComp(selectedId).el, 'Neumorphic');
+        }
+
+        // 세부 값을 실제 엘리먼트에 적용
+        function applyStyleDetails(el, type) {
+            if (!el || !type) return;
+            if (type === 'Glass') {
+                const bg = `rgba(255,255,255,${styleDetails.glassOpacity / 100})`;
+                const borderA = styleDetails.glassBorder / 100;
+                el.style.background = bg;
+                el.style.backdropFilter = `blur(${styleDetails.glassBlur}px) saturate(${styleDetails.glassSat}%)`;
+                el.style.webkitBackdropFilter = `blur(${styleDetails.glassBlur}px) saturate(${styleDetails.glassSat}%)`;
+                el.style.borderColor = `rgba(255,255,255,${borderA})`;
+                el.style.borderStyle = 'solid';
+                el.style.borderWidth = '1px';
+            } else if (type === 'Retro') {
+                // Retro: outline + pixelated 효과
+                const px = styleDetails.pixelSize;
+                const noise = styleDetails.noiseLevel / 100;
+                const glow = styleDetails.pixelGlow;
+                // 픽셀사이즈 기반으로 CSS filter 적용 (실제 픽셀화는 SVG filter로)
+                el.style.outline = `2px solid var(--accent)`;
+                el.style.outlineOffset = `${px}px`;
+                el.style.imageRendering = 'pixelated';
+                el.style.boxShadow = glow > 0
+                    ? `0 0 ${glow}px rgba(212,255,0,0.8), inset 0 0 ${Math.floor(glow / 2)}px rgba(212,255,0,0.2)`
+                    : `0 0 0 ${px}px rgba(212,255,0,0.3)`;
+                // 노이즈는 pseudo 필터로 opacity 변화
+                el.style.opacity = 1 - (noise * 0.3);
+            } else if (type === 'Brutalist') {
+                el.style.boxShadow = `${styleDetails.brutalX}px ${styleDetails.brutalY}px 0 ${styleDetails.brutalShadowColor}`;
+            } else if (type === 'Neumorphic') {
+                const d = styleDetails.neuroDepth;
+                const b = styleDetails.neuroBlur;
+                if (styleDetails.neuroMode === 'convex') {
+                    el.style.boxShadow = `${d}px ${d}px ${b}px rgba(163,177,198,0.5), -${d}px -${d}px ${b}px rgba(255,255,255,0.85)`;
+                } else {
+                    el.style.boxShadow = `inset ${d}px ${d}px ${b}px rgba(163,177,198,0.5), inset -${d}px -${d}px ${b}px rgba(255,255,255,0.85)`;
+                }
+            } else if (type === 'Minimal') {
+                el.style.fontWeight = styleDetails.minFW;
+                el.style.letterSpacing = styleDetails.minLS + 'px';
+                el.style.opacity = styleDetails.minOp / 100;
+            }
+        }
+
+        /* ────────────────────────────────────────────────
+           PLAYGROUND
+        ──────────────────────────────────────────────── */
+        let pgBgMode = 'dark';
+        let pgCtxMode = 'signup';
+        let pgIsLight = false; // White BG 시 true, renderPlayground 후에도 색 유지
+
+        function openPlayground() {
+            document.getElementById('playground').classList.add('open');
+            renderPlayground();
+        }
+
+        function closePlayground() {
+            document.getElementById('playground').classList.remove('open');
+        }
+
+        function setPgBg(mode, btn) {
+            pgBgMode = mode;
+            document.querySelectorAll('.pg-toolbar .pg-btn').forEach(b => {
+                if (['Dark', 'Light', 'Gradient', 'Glass'].some(t => b.textContent.trim() === t)) b.classList.remove('active');
+            });
+            btn.classList.add('active');
+            const bg = document.getElementById('pgBg');
+
+            // 예시 그라디언트 프리셋 8개 중 랜덤 선택
+            const GRAD_PRESETS = [
+                'linear-gradient(135deg,#1a0533,#0f2d5c,#1a3300)',
+                'linear-gradient(135deg,#0d0d0d,#1a1a4e,#2d0033)',
+                'linear-gradient(135deg,#003322,#00334d,#1a1a00)',
+                'linear-gradient(160deg,#ff6b6b,#c850c0,#4158d0)',
+                'linear-gradient(160deg,#0f0c29,#302b63,#24243e)',
+                'linear-gradient(135deg,#1d1d1d,#2c3e50,#1a0533)',
+                'linear-gradient(120deg,#0a0a0a,#1a4d2e,#2d1a4d)',
+                'linear-gradient(145deg,#1a002e,#003366,#001a00)',
+            ];
+
+            if (mode === 'grad') {
+                const pick = GRAD_PRESETS[Math.floor(Math.random() * GRAD_PRESETS.length)];
+                bg.className = 'pg-bg';
+                bg.style.background = pick;
+            } else {
+                bg.style.background = '';
+                bg.className = 'pg-bg pg-bg-' + mode;
+            }
+
+            // 화이트 모드: 카드 전체 텍스트 검정으로 (color cascade)
+            const isLight = (mode === 'light');
+            pgIsLight = isLight; // renderPlayground에서도 참조
+            const ctx = document.getElementById('pg-context');
+            if (ctx) {
+                // ctx에 color 설정 → 내부 모든 텍스트에 자동 cascade
+                ctx.style.color = isLight ? '#111' : '';
+                ctx.style.background = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.04)';
+                ctx.style.borderColor = isLight ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.09)';
+                // 인풋 필드 색상 별도 조정
+                ctx.querySelectorAll('input').forEach(el => {
+                    el.style.color = isLight ? '#111' : 'rgba(255,255,255,0.8)';
+                    el.style.background = isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.05)';
+                    el.style.borderColor = isLight ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.12)';
+                });
+            }
+        }
+
+        function setPgCtx(mode, btn) {
+            pgCtxMode = mode;
+            document.querySelectorAll('.pg-toolbar .pg-btn').forEach(b => {
+                if (['Sign Up', 'Hero', 'Card'].some(t => b.textContent.trim() === t)) b.classList.remove('active');
+            });
+            btn.classList.add('active');
+            renderPlayground();
+        }
+
+        function renderPlayground() {
+            const ctx = document.getElementById('pg-context');
+            if (!ctx) return;
+
+            // 컴포넌트 슬롯: 선택 컴포넌트 복제 또는 placeholder
+            function makeSlot() {
+                if (selectedId !== null) {
+                    const comp = getComp(selectedId);
+                    const clone = comp.el.cloneNode(true);
+                    clone.style.position = 'static';
+                    clone.style.cursor = 'default';
+                    clone.style.outline = 'none';
+                    clone.style.animation = 'none';
+                    clone.style.transform = 'scale(0.80)';
+                    clone.style.transformOrigin = 'top center';
+                    // 스케일 후 실제 차지 공간을 줄이기 위해 height도 조정
+                    clone.style.width = comp.props.width + 'px';
+                    clone.style.height = comp.props.height + 'px';
+                    clone.style.maxWidth = '100%';
+                    clone.style.marginBottom = `-${Math.round(comp.props.height * 0.35)}px`;
+                    clone.style.boxSizing = 'border-box';
+                    return clone;
+                } else {
+                    const ph = document.createElement('div');
+                    ph.style.cssText = 'width:100%;height:52px;border:1.5px dashed rgba(255,255,255,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;color:rgba(255,255,255,0.3);';
+                    ph.textContent = '← Select a component on canvas';
+                    return ph;
+                }
+            }
+
+            // 컨텍스트별 HTML 구성
+            ctx.innerHTML = '';
+
+            if (pgCtxMode === 'signup') {
+                // Sign Up: 이메일 인풋 + CTA 버튼
+                ctx.innerHTML = `
+                    <div class="pg-ctx-title">Create your account</div>
+                    <div class="pg-ctx-sub">Join thousands of designers exploring new possibilities.</div>
+                    <input type="text" placeholder="Email address" style="width:100%;box-sizing:border-box;padding:11px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.8);font-family:var(--font);font-size:13px;outline:none;" readonly>
+                    <div id="pg-comp-slot"></div>
+                    <div class="pg-ctx-sub" style="font-size:11px;">Already have an account? <span style="color:var(--accent);cursor:pointer;">Sign in</span></div>
+                `;
+
+            } else if (pgCtxMode === 'hero') {
+                // Hero: 헤드라인 + 서브 + CTA
+                ctx.innerHTML = `
+                    <div class="pg-ctx-title" style="font-size:24px;line-height:1.2;">Design systems<br>that feel <span style="color:var(--accent)">alive.</span></div>
+                    <div class="pg-ctx-sub">Experiment freely. See your component in the wild.</div>
+                    <div id="pg-comp-slot"></div>
+                `;
+
+            } else if (pgCtxMode === 'card') {
+                // Card: 아이콘 + 특징 설명 + CTA
+                ctx.innerHTML = `
+                    <div class="pg-ctx-title">Upgrade to Pro</div>
+                    <div class="pg-ctx-sub">Unlock unlimited components, export CSS, and advanced controls.</div>
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        <div style="font-size:12px;color:rgba(255,255,255,0.5);display:flex;align-items:center;gap:8px;"><span style="color:var(--accent);font-size:14px;">✓</span> Unlimited style variations</div>
+                        <div style="font-size:12px;color:rgba(255,255,255,0.5);display:flex;align-items:center;gap:8px;"><span style="color:var(--accent);font-size:14px;">✓</span> Export production-ready CSS</div>
+                        <div style="font-size:12px;color:rgba(255,255,255,0.5);display:flex;align-items:center;gap:8px;"><span style="color:var(--accent);font-size:14px;">✓</span> Advanced detail controls</div>
+                    </div>
+                    <div id="pg-comp-slot"></div>
+                `;
+            }
+
+            // 슬롯에 컴포넌트 삽입
+            const slot = document.getElementById('pg-comp-slot');
+            if (slot) slot.appendChild(makeSlot());
+
+            // innerHTML 교체 후 Light BG 상태면 색 재적용
+            if (pgIsLight && ctx) {
+                ctx.style.color = '#111';
+                ctx.style.background = 'rgba(0,0,0,0.05)';
+                ctx.style.borderColor = 'rgba(0,0,0,0.12)';
+                // 인풋 스타일
+                ctx.querySelectorAll('input').forEach(el => {
+                    el.style.color = '#111';
+                    el.style.background = 'rgba(0,0,0,0.04)';
+                    el.style.borderColor = 'rgba(0,0,0,0.15)';
+                });
+                // 인라인 흰색 color가 있는 모든 하위 요소를 어둡게 전환
+                ctx.querySelectorAll('[style*="rgba(255,255,255"]').forEach(el => {
+                    // color 관련 인라인 스타일만 덮어쓰기
+                    if (el.style.color && el.style.color !== 'var(--accent)') {
+                        el.style.color = 'rgba(0,0,0,0.55)';
+                    }
+                });
+                // placeholder(dashed box) 텍스트 색도 조정
+                ctx.querySelectorAll('[style*="dashed"]').forEach(el => {
+                    el.style.color = 'rgba(0,0,0,0.3)';
+                    el.style.borderColor = 'rgba(0,0,0,0.15)';
+                });
+            }
+        }
+
+        /* ────────────────────────────────────────────────
+           유틸
+        ──────────────────────────────────────────────── */
+        function getComp(id) {
+            return components.find(c => c.id === id);
+        }
+
+        /* ────────────────────────────────────────────────
+           Lab 배경 전환 (Dark / White)
+        ──────────────────────────────────────────────── */
+        function setLabBg(mode, btn) {
+            document.querySelectorAll('#bgDarkBtn,#bgWhiteBtn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const canvas = document.getElementById('canvas');
+            const body = document.body;
+            if (mode === 'white') {
+                body.style.background = '#f5f5f5';
+                canvas.style.background = '#f0f0f0';
+                // 돇 그리드을 어두운 색으로
+                document.documentElement.style.setProperty('--bg-dot-color', 'rgba(0,0,0,0.06)');
+            } else {
+                body.style.background = '';
+                canvas.style.background = '';
+                document.documentElement.style.setProperty('--bg-dot-color', 'rgba(255,255,255,0.06)');
+            }
+        }
+
+        /* ────────────────────────────────────────────────
+           로고 텍스트 스크램블 (Wildish 스타일)
+        ──────────────────────────────────────────────── */
+        function logoScramble() {
+            const el = document.getElementById('logoText');
+            const original = 'Oddvibe Lab';
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#';
+            el.addEventListener('mouseenter', () => {
+                let iter = 0;
+                const interval = setInterval(() => {
+                    el.textContent = original
+                        .split('')
+                        .map((c, i) => {
+                            if (i < iter) return c;
+                            if (c === ' ' || c === '⬡') return c;
+                            return chars[Math.floor(Math.random() * chars.length)];
+                        })
+                        .join('');
+                    if (iter >= original.length) {
+                        clearInterval(interval);
+                        el.textContent = original;
+                    }
+                    iter += 1.5;
+                }, 40);
+            });
+        }
+
+        /* ────────────────────────────────────────────────
+           시작
+        ──────────────────────────────────────────────── */
+        init();
+    </script>
+</body>
+
+</html>
