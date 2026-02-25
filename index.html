@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oddvibe Lab — Component Design Playground</title>
+    <!-- Pretendard -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #050505;
+            --accent: #d4ff00;
+            --accent2: #ff3a3a;
+            --accent3: #5c9dff;
+            /* Futura → Helvetica → Pretendard 순 fallback */
+            --font: 'Futura LT', 'Futura', 'Futura BT', 'Futura Std', 'Century Gothic', Helvetica, 'Helvetica Neue', 'Apple SD Gothic Neo', Pretendard, sans-serif;
+            --font-ko: Pretendard, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+        }
+
+        html {
+            font-size: 14px
+        }
+
+        body {
+            background: var(--bg);
+            color: #f0f0f0;
+            font-family: var(--font);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* DOT GRID */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image: radial-gradient(circle, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+
+        /* NAV */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 48px;
+            height: 64px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(5, 5, 5, 0.88);
+            backdrop-filter: blur(16px);
+        }
+
+        .nav-logo {
+            font-family: var(--font);
+            font-weight: 300;
+            font-size: 17px;
+            letter-spacing: 0.04em;
+            color: #fff;
+            cursor: pointer;
+            user-select: none;
+            text-decoration: none;
+        }
+
+        .nav-logo em {
+            font-style: normal;
+            font-weight: 700;
+            color: var(--accent)
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px
+        }
+
+        .nav-links a {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 12px;
+            font-weight: 400;
+            text-decoration: none;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #fff
+        }
+
+        .nav-cta {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 9px 22px;
+            border-radius: 999px;
+            font-family: var(--font);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-cta:hover {
+            background: #eeff44;
+            transform: scale(1.04)
+        }
+
+        /* HERO */
+        #hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-top: 64px;
+            overflow: hidden;
+        }
+
+        .hero-text {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .hero-eyebrow {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 28px;
+        }
+
+        .hero-title {
+            font-family: var(--font);
+            font-size: clamp(80px, 11vw, 156px);
+            font-weight: 300;
+            line-height: 0.9;
+            letter-spacing: -0.01em;
+            color: #fff;
+        }
+
+        .hero-title .bold {
+            font-weight: 700
+        }
+
+        .hero-title .accent {
+            color: var(--accent)
+        }
+
+        .hero-sub {
+            margin-top: 32px;
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.38);
+            line-height: 1.8;
+            max-width: 420px;
+            margin-inline: auto;
+            font-family: var(--font-ko);
+            font-weight: 300;
+        }
+
+        .hero-actions {
+            margin-top: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: all;
+        }
+
+        .btn-primary {
+            background: #fff;
+            color: #000;
+            border: none;
+            padding: 16px 44px;
+            border-radius: 999px;
+            font-family: var(--font);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.25s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            background: #eeff44;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 32px rgba(212, 255, 0, 0.25)
+        }
+
+        /* FLOATING COMPONENTS — 2번째 이미지 무드 */
+        #scatter-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 5;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .float-comp {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font);
+            cursor: default;
+            user-select: none;
+            will-change: transform;
+            transition: box-shadow 0.3s;
+            white-space: nowrap;
+        }
+
+        /* Yellow / Brutalist 느낌 — COMPONENT 버튼 */
+        .fc-yellow {
+            background: #f0c800;
+            color: #000;
+            border-radius: 10px;
+            font-weight: 300;
+            font-size: 15px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 0 28px;
+        }
+
+        .fc-red {
+            background: #e63030;
+            color: #fff;
+            border-radius: 12px;
+            font-weight: 300;
+            font-size: 14px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 0 24px;
+        }
+
+
+        /* Dark glass pill (Share 버튼) */
+        .fc-dark-pill {
+            background: rgba(40, 40, 40, 0.88);
+            color: #fff;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(12px);
+            font-weight: 300;
+            font-size: 14px;
+            padding: 0 28px;
+        }
+
+        /* White pill (BUTTON) */
+        .fc-white-pill {
+            background: #fff;
+            color: #000;
+            border-radius: 999px;
+            font-weight: 300;
+            font-size: 14px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 0 28px;
+        }
+
+        /* Minimal white card */
+        .fc-minimal {
+            background: #fff;
+            color: #000;
+            border-radius: 10px;
+            font-weight: 300;
+            font-size: 13px;
+            padding: 0 22px;
+        }
+
+        /* Glass transparent */
+        .fc-glass {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(16px);
+            border-radius: 14px;
+            font-weight: 300;
+            font-size: 13px;
+            padding: 0 22px;
+        }
+
+        /* Retro terminal */
+        .fc-retro {
+            background: #000;
+            color: var(--accent);
+            border: 1.5px solid var(--accent);
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-weight: 400;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0 20px;
+        }
+
+        /* FEATURES */
+        #features {
+            position: relative;
+            z-index: 10;
+            padding: 100px 48px 120px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .feat-heading {
+            font-family: var(--font);
+            font-size: clamp(36px, 4vw, 52px);
+            font-weight: 300;
+            letter-spacing: -0.01em;
+            margin-bottom: 52px;
+            color: #fff;
+        }
+
+        .feat-heading strong {
+            font-weight: 700;
+            color: var(--accent)
+        }
+
+        .feat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px
+        }
+
+        .feat-card {
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 20px;
+            padding: 36px 28px;
+            transition: border-color 0.3s, transform 0.3s, background 0.3s;
+        }
+
+        .feat-card:hover {
+            border-color: rgba(212, 255, 0, 0.2);
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .feat-icon {
+            font-size: 26px;
+            margin-bottom: 18px
+        }
+
+        .feat-title {
+            font-family: var(--font);
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: 0.01em;
+        }
+
+        .feat-desc {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.4);
+            line-height: 1.75;
+            font-family: var(--font-ko);
+            font-weight: 300;
+        }
+
+        /* PREVIEW */
+        #preview {
+            position: relative;
+            z-index: 10;
+            padding: 0 48px 120px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .preview-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 24px;
+        }
+
+        .preview-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 24px;
+            padding: 52px;
+            display: flex;
+            gap: 52px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .preview-comps {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center
+        }
+
+        /* FOOTER */
+        footer {
+            position: relative;
+            z-index: 10;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 36px 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .footer-logo {
+            font-family: var(--font);
+            font-weight: 300;
+            font-size: 16px;
+            color: #fff;
+        }
+
+        .footer-logo strong {
+            font-weight: 700;
+            color: var(--accent)
+        }
+
+        .footer-text {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.25);
+            letter-spacing: 0.05em
+        }
+
+        /* CURSOR GLOW */
+        #cursor-glow {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(212, 255, 0, 0.045) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+            transform: translate(-50%, -50%);
+            transition: left 0.08s, top 0.08s;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="cursor-glow"></div>
+
+    <!-- NAV -->
+    <!-- Nav: CTA 버튼 제거 — 메인 히어로에 하나만 존재 -->
+    <nav>
+        <a class="nav-logo" href="index.html" id="navLogo">Oddvibe <em>Lab</em></a>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#preview">Preview</a>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section id="hero">
+        <div id="scatter-layer"></div>
+        <div class="hero-text">
+            <div class="hero-eyebrow">Design Experiment Platform</div>
+            <h1 class="hero-title">
+                Oddvibe<br>
+                <span class="bold accent">Lab</span>
+            </h1>
+            <p class="hero-sub">컴포넌트를 조합하고, 값을 조절하고, 느낌을 실험하세요.<br>디자인의 가능성을 탐험하는 인터랙티브 실험실.</p>
+            <div class="hero-actions">
+                <a class="btn-primary" href="component-lab.html">Open Lab →</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section id="features">
+        <h2 class="feat-heading">Why <strong>Experiment?</strong></h2>
+        <div class="feat-grid">
+            <div class="feat-card">
+                <div class="feat-icon">🔬</div>
+                <div class="feat-title">스타일별 세부 조절</div>
+                <div class="feat-desc">Glass blur 강도, Retro glow, Brutalist shadow offset까지 — 각 스타일의 핵심 값을 직접 조절해보세요.
+                </div>
+            </div>
+            <div class="feat-card">
+                <div class="feat-icon">⚡</div>
+                <div class="feat-title">실시간 CSS 출력</div>
+                <div class="feat-desc">슬라이더를 움직이는 순간 CSS 코드가 생성됩니다. 바로 복사해서 프로젝트에 적용하세요.</div>
+            </div>
+            <div class="feat-card">
+                <div class="feat-icon">🎭</div>
+                <div class="feat-title">Playground 뷰</div>
+                <div class="feat-desc">다양한 배경 위에 컴포넌트를 놓고 실제 사용 맥락에서 어떻게 보이는지 확인하세요.</div>
+            </div>
+            <div class="feat-card">
+                <div class="feat-icon">🎲</div>
+                <div class="feat-title">랜덤 조합</div>
+                <div class="feat-desc">예상치 못한 스타일 조합을 발견하세요. 랜덤 버튼 하나로 새로운 방향을 탐구합니다.</div>
+            </div>
+            <div class="feat-card">
+                <div class="feat-icon">🧲</div>
+                <div class="feat-title">자기장 인터랙션</div>
+                <div class="feat-desc">마우스 커서에 반응하는 물리 기반 인터랙션. 컴포넌트가 살아있는 것처럼 움직입니다.</div>
+            </div>
+            <div class="feat-card">
+                <div class="feat-icon">🎨</div>
+                <div class="feat-title">6가지 스타일 시스템</div>
+                <div class="feat-desc">Minimal, Brutalist, Glass, Neumorphic, Organic, Retro — 각각의 디자인 철학을 탐구하세요.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PREVIEW -->
+    <section id="preview">
+        <div class="preview-label">Component Showcase</div>
+        <div class="preview-box">
+            <div class="preview-comps">
+                <div
+                    style="background:#fff;color:#000;padding:14px 28px;border-radius:999px;font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;font-family:var(--font)">
+                    BUTTON</div>
+                <div
+                    style="background:#f0c800;color:#000;padding:14px 28px;border-radius:10px;font-weight:900;font-size:13px;letter-spacing:0.05em;text-transform:uppercase;font-family:var(--font)">
+                    COMPONENT</div>
+                <div
+                    style="background:#e63030;color:#fff;padding:14px 24px;border-radius:12px;font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;font-family:var(--font)">
+                    CANCEL</div>
+                <div
+                    style="background:rgba(40,40,40,0.9);color:#fff;padding:14px 28px;border-radius:999px;border:1px solid rgba(255,255,255,0.12);backdrop-filter:blur(12px);font-weight:500;font-size:13px;font-family:var(--font)">
+                    Share</div>
+                <div
+                    style="background:#000;color:#d4ff00;border:2px solid #d4ff00;padding:12px 24px;font-family:'Courier New',monospace;font-weight:700;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;border-radius:6px">
+                    RETRO</div>
+            </div>
+            <div style="flex:1;min-width:220px">
+                <p
+                    style="font-size:14px;color:rgba(255,255,255,0.4);line-height:1.9;font-family:var(--font-ko);font-weight:300">
+                    각 컴포넌트는 수십 가지 파라미터로 조절 가능합니다.<br>blur, glow, shadow, radius, stroke...<br>당신만의 언어로 조합하세요.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-logo">Oddvibe <strong>Lab</strong></div>
+        <div class="footer-text">25-2 Lab Void · Interactive Design Experiment</div>
+    </footer>
+
+    <script>
+        /* ── 커서 글로우 ── */
+        const glow = document.getElementById('cursor-glow');
+        document.addEventListener('mousemove', e => {
+            glow.style.left = e.clientX + 'px';
+            glow.style.top = e.clientY + 'px';
+        });
+
+        /* ── 플로팅 컴포넌트 데이터 — 2번째 이미지 무드 ── */
+        const COMPS = [
+            { cls: 'fc-yellow', label: 'COMPONENT', w: 200, h: 62 },
+            { cls: 'fc-red', label: 'CANCEL', w: 160, h: 58 },
+            { cls: 'fc-dark-pill', label: 'Share', w: 150, h: 58 },
+            { cls: 'fc-white-pill', label: 'BUTTON', w: 170, h: 62 },
+            { cls: 'fc-yellow', label: 'ACTION', w: 180, h: 58 },
+            { cls: 'fc-minimal', label: 'Next →', w: 140, h: 52 },
+            { cls: 'fc-glass', label: 'Explore', w: 160, h: 56 },
+            { cls: 'fc-red', label: 'DELETE', w: 150, h: 58 },
+            { cls: 'fc-white-pill', label: 'CONFIRM', w: 180, h: 62 },
+            { cls: 'fc-dark-pill', label: 'Login', w: 140, h: 56 },
+            { cls: 'fc-yellow', label: 'SUBMIT', w: 170, h: 58 },
+            { cls: 'fc-retro', label: 'EXECUTE', w: 170, h: 56 },
+            { cls: 'fc-glass', label: 'Enter', w: 140, h: 52 },
+            { cls: 'fc-minimal', label: 'Save', w: 120, h: 50 },
+            { cls: 'fc-white-pill', label: 'GO →', w: 130, h: 56 },
+        ];
+
+        const particles = [];
+        const layer = document.getElementById('scatter-layer');
+
+        function createFloatComps() {
+            const W = window.innerWidth;
+            const H = window.innerHeight;
+
+            /* 화면 외곽 zone 배치 — 중앙 히어로 텍스트 영역은 비워둠 */
+            const zones = [
+                [0.04 * W, 0.08 * H], [0.72 * W, 0.06 * H], [0.08 * W, 0.58 * H],
+                [0.78 * W, 0.62 * H], [0.02 * W, 0.82 * H], [0.85 * W, 0.82 * H],
+                [0.38 * W, 0.88 * H], [0.58 * W, 0.12 * H], [0.18 * W, 0.22 * H],
+                [0.82 * W, 0.28 * H], [0.28 * W, 0.75 * H], [0.62 * W, 0.80 * H],
+                [0.88 * W, 0.46 * H], [0.06 * W, 0.38 * H], [0.50 * W, 0.05 * H],
+            ];
+
+            COMPS.forEach((c, i) => {
+                const el = document.createElement('div');
+                el.className = 'float-comp ' + c.cls;
+                el.textContent = c.label;
+                el.style.width = c.w + 'px';
+                el.style.height = c.h + 'px';
+                el.style.opacity = '0';
+                layer.appendChild(el);
+
+                const [tx, ty] = zones[i] || [Math.random() * W, Math.random() * H];
+                const rot = (Math.random() - 0.5) * 26;
+
+                el.style.left = (W / 2 - c.w / 2) + 'px';
+                el.style.top = (H / 2 - c.h / 2) + 'px';
+
+                particles.push({ el, x: tx, y: ty, baseRot: rot, w: c.w, h: c.h });
+
+                setTimeout(() => {
+                    // opacity를 낮게 유지 — OPEN LAB 버튼이 가려지지 않도록
+                    el.style.transition = `left 1.6s cubic-bezier(.34,1.56,.64,1), top 1.6s cubic-bezier(.34,1.56,.64,1), opacity 1.2s ease, transform 1.6s cubic-bezier(.34,1.56,.64,1)`;
+                    el.style.left = tx + 'px';
+                    el.style.top = ty + 'px';
+                    el.style.opacity = (0.22 + Math.random() * 0.22).toFixed(2); // 최대 0.44
+                    el.style.transform = `rotate(${rot}deg)`;
+                }, 200 + i * 80);
+            });
+        }
+
+        /* ── 마우스 패럴랙스 ── */
+        let mouseX = 0, mouseY = 0;
+        document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+
+        function tickParallax() {
+            const W = window.innerWidth, H = window.innerHeight;
+            const relX = (mouseX / W - 0.5) * 2;
+            const relY = (mouseY / H - 0.5) * 2;
+            particles.forEach((p, i) => {
+                const depth = 0.012 + (i % 5) * 0.007;
+                const ox = relX * depth * 55;
+                const oy = relY * depth * 55;
+                p.el.style.transform = `translate(${ox}px,${oy}px) rotate(${p.baseRot}deg)`;
+            });
+            requestAnimationFrame(tickParallax);
+        }
+
+        /* ── 섹션 페이드인 ── */
+        function setupFadeIn() {
+            const s = document.createElement('style');
+            s.textContent = `.fade-in{opacity:0;transform:translateY(28px);transition:opacity 0.7s,transform 0.7s}.fade-in.visible{opacity:1;transform:none}`;
+            document.head.appendChild(s);
+            document.querySelectorAll('.feat-card,.preview-box').forEach(el => el.classList.add('fade-in'));
+            const obs = new IntersectionObserver(entries => {
+                entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+            }, { threshold: 0.12 });
+            document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+        }
+
+        /* ── INIT ── */
+        window.addEventListener('load', () => {
+            createFloatComps();
+            tickParallax();
+            setupFadeIn();
+        });
+    </script>
+</body>
+
+</html>
